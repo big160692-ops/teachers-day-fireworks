@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Happy Teachers Day ✨</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Shadows+Into+Light&family=Poppins:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:'Poppins',sans-serif;
+    background:#c8a13a;
+    overflow:hidden;
+    min-height:100vh;min-height:100svh;
+  }
+  /* clean template: gold + books, no fireworks baked in */
+  .stage{
+    position:fixed;inset:0;z-index:1;
+    background-image:url('./clean-template.png');
+    background-size:cover;
+    background-position:center bottom;
+    background-repeat:no-repeat;
+  }
+  #sky{position:fixed;inset:0;z-index:2;width:100%;height:100%;pointer-events:none}
+
+  main{
+    position:relative;z-index:3;
+    height:100vh;height:100svh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;
+    padding:0 20px 18vh;
+    pointer-events:none;
+  }
+  h1{
+    font-family:'Caveat',cursive;font-weight:700;
+    font-size:clamp(3.6rem, 12vw, 10rem);
+    line-height:1;letter-spacing:.01em;
+    color:#0b0b0b;transform:rotate(-1.5deg);
+    text-shadow:0 1px 0 rgba(255,255,255,.3);
+    animation:titleIn 1.1s cubic-bezier(.2,.8,.25,1) both;
+  }
+  @keyframes titleIn{from{opacity:0;transform:translateY(30px) rotate(0)}to{opacity:1;transform:translateY(0) rotate(-1.5deg)}}
+  .note-label{
+    margin-top:.6rem;
+    font-family:'Shadows Into Light',cursive;
+    font-size:clamp(1.25rem, 4vw, 2.3rem);
+    letter-spacing:.32em;text-transform:uppercase;
+    color:#111;opacity:.92;
+    animation:titleIn 1.1s .25s both;
+  }
+  .note-body{
+    margin-top:1.2rem;max-width:800px;min-height:3.2em;
+    font-family:'Caveat',cursive;font-weight:500;
+    font-size:clamp(1.6rem, 4.2vw, 2.5rem);line-height:1.35;
+    color:#1a1405;
+    text-shadow:0 1px 0 rgba(255,248,231,.45);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .note-body.fade{opacity:0;transform:translateY(10px)}
+  .ripple{position:fixed;z-index:4;pointer-events:none;border:2px solid rgba(255,255,255,.9);border-radius:50%;animation:rip .6s ease-out forwards}
+  @keyframes rip{from{opacity:.9;transform:translate(-50%,-50%) scale(.2)}to{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+  @media (max-width:640px){ main{padding-bottom:22vh} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important} h1,.note-label{opacity:1} }
+</style>
+</head>
+<body>
+<div class="stage"></div>
+<canvas id="sky"></canvas>
+
+<main>
+  <h1>Happy Teachers Day</h1>
+  <div class="note-label">Note to our teacher</div>
+  <div class="note-body" id="note">Like fireworks, you burst into our lives with color and leave sparks that never fade. Thank you for every lesson.</div>
+</main>
+
+<script>
+const cv = document.getElementById('sky');
+const ctx = cv.getContext('2d');
+function resize(){
+  const d = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = innerWidth*d; cv.height = innerHeight*d;
+  ctx.setTransform(d,0,0,d,0,0);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+}
+resize(); addEventListener('resize', resize);
+
+// palettes sampled from your reference artwork
+const PALETTES = {
+  tl: ['#3b82f6','#5aa9ff','#93c5fd','#ffb703','#fb8500','#ffffff'],
+  tr: ['#ffd166','#fb8500','#e63946','#7b2ff7','#fff8dc','#8ecae6','#ffffff'],
+  bl: ['#a4133c','#ff4d94','#e93cac','#7b2ff7','#ffd166','#ffffff','#4d96ff'],
+  br: ['#8ecae6','#aedff7','#ffd166','#fff3b0','#ffffff','#e9c46a']
+};
+const CORNERS = [
+  {x:.13, y:.17, p:'tl', s:1.15},
+  {x:.88, y:.22, p:'tr', s:1.25},
+  {x:.08, y:.74, p:'bl', s:1.05},
+  {x:.88, y:.70, p:'br', s:1.0}
+];
+
+const bursts = [];
+function pick(a){ return a[Math.random()*a.length|0]; }
+
+function spawnBurst(nx, ny, paletteKey, scale=1){
+  const x = nx*innerWidth, y = ny*innerHeight;
+  const colors = PALETTES[paletteKey] || PALETTES.tr;
+  const base = Math.min(innerWidth, innerHeight)/650;
+  const count = 42 + (Math.random()*22|0);
+  const strokes = [];
+  for(let i=0;i<count;i++){
+    const isStar = paletteKey==='br' && Math.random()<.3;
+    const ang = (i/count)*Math.PI*2 + (Math.random()-.5)*.35;
+    const len = (isStar? 40+Math.random()*70 : 70+Math.random()*150) * base * scale;
+    strokes.push({
+      ang, len,
+      w: isStar? 2+Math.random()*2.5 : 3.5+Math.random()*7,
+      color: pick(colors),
+      delay: Math.random()*.35,
+      drawTime: .35+Math.random()*.35,
+      wobble: (Math.random()-.5)*14,
+      star: isStar,
+      dots: Array.from({length: 2+(Math.random()*3|0)}, ()=>({
+        t:.4+Math.random()*.6, r:.8+Math.random()*2.4, off:(Math.random()-.5)*8
+      }))
+    });
+  }
+  bursts.push({x, y, strokes, age:0, life:2.6+Math.random()*1.4,
+    wash: {r: 10+Math.random()*20, color: pick(colors)}});
+}
+
+function drawWatercolorStroke(x, y, s, progress, alpha){
+  const e = 1 - Math.pow(1-Math.min(Math.max(progress,0),1), 3); // fast paint-out
+  if(e<=0) return;
+  const ex = x + Math.cos(s.ang)*s.len*e;
+  const ey = y + Math.sin(s.ang)*s.len*e + s.wobble*e;
+  const sx = x + Math.cos(s.ang)*10, sy = y + Math.sin(s.ang)*10;
+
+  // soft watercolor under-wash (wide, translucent)
+  ctx.globalAlpha = alpha*.22;
+  ctx.strokeStyle = s.color; ctx.lineWidth = s.w*(1.7-e*.5);
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke();
+
+  // main bristle stroke
+  ctx.globalAlpha = alpha*.85;
+  ctx.strokeStyle = s.color; ctx.lineWidth = s.w*(1-e*.55);
+  ctx.beginPath(); ctx.moveTo(sx,sy);
+  ctx.quadraticCurveTo((sx+ex)/2+(Math.random()-.5)*2, (sy+ey)/2, ex, ey);
+  ctx.stroke();
+
+  // bright core (dry-brush highlight)
+  ctx.globalAlpha = alpha*.5;
+  ctx.strokeStyle = '#fff8e1'; ctx.lineWidth = Math.max(s.w*.32, .8);
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+(ex-sx)*.75, sy+(ey-sy)*.75); ctx.stroke();
+
+  // paint droplets along the stroke
+  for(const d of s.dots){
+    if(progress > d.t){
+      const px = sx+(ex-sx)*d.t + Math.cos(s.ang+1.57)*d.off;
+      const py = sy+(ey-sy)*d.t + Math.sin(s.ang+1.57)*d.off;
+      ctx.globalAlpha = alpha*.8; ctx.fillStyle = s.color;
+      ctx.beginPath(); ctx.arc(px,py,d.r*(1.2-e*.4),0,7); ctx.fill();
+    }
+  }
+  // star tip for bottom-right sparkle bursts
+  if(s.star && e>.7){
+    ctx.globalAlpha = alpha; ctx.fillStyle = '#fffbe8';
+    const r = 3.5*(e-.7)/.3 + 1;
+    ctx.beginPath();
+    for(let k=0;k<8;k++){
+      const a2 = k*Math.PI/4, rr = k%2? r*.4 : r*1.6;
+      ctx.lineTo(ex+Math.cos(a2)*rr, ey+Math.sin(a2)*rr);
+    }
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+let last = performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt = Math.min((now-last)/1000, .05); last = now;
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+
+  for(let bi=bursts.length-1; bi>=0; bi--){
+    const b = bursts[bi];
+    b.age += dt;
+    const fade = Math.max(1 - b.age/b.life, 0);
+
+    // faint wet-paper wash at ignition
+    if(b.age < .5){
+      ctx.globalAlpha = (1-b.age/.5)*.25;
+      const g = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.wash.r*3);
+      g.addColorStop(0,'#ffffff'); g.addColorStop(1,b.wash.color);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.wash.r*3,0,7); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    for(const s of b.strokes){
+      const p = (b.age - s.delay)/s.drawTime;
+      if(p>0) drawWatercolorStroke(b.x, b.y, s, p, fade);
+    }
+    if(b.age >= b.life) bursts.splice(bi,1);
+  }
+}
+requestAnimationFrame(frame);
+
+// choreography: paint the 4 corners like the reference, then keep it alive
+let ci = 0;
+function autoShow(){
+  const c = CORNERS[ci % CORNERS.length];
+  spawnBurst(c.x + (Math.random()-.5)*.04, c.y + (Math.random()-.5)*.04, c.p, c.s);
+  ci++;
+  // occasional small center sparkle
+  if(Math.random()<.3) setTimeout(()=>spawnBurst(.35+Math.random()*.3, .3+Math.random()*.2, pick(Object.keys(PALETTES)), .6), 350);
+}
+CORNERS.forEach((c,i)=> setTimeout(()=>spawnBurst(c.x,c.y,c.p,c.s), 300+i*380));
+setInterval(()=>{ if(document.visibilityState==='visible') autoShow(); }, 1400);
+
+// click paints a burst too
+addEventListener('pointerdown', e=>{
+  const s=document.createElement('div');
+  s.className='ripple';
+  s.style.cssText=`left:${e.clientX}px;top:${e.clientY}px;width:90px;height:90px`;
+  document.body.appendChild(s); setTimeout(()=>s.remove(),650);
+  spawnBurst(e.clientX/innerWidth, e.clientY/innerHeight, pick(Object.keys(PALETTES)), .9);
+});
+
+// rotating notes below the title, every 30s
+const notes = [
+  'Like fireworks, you burst into our lives with color and leave sparks that never fade. Thank you for every lesson.',
+  'For believing in us before we believed in ourselves — your patience turns mistakes into light.',
+  'You plant seeds of curiosity that bloom for a lifetime. Happy Teachers Day!',
+  'Every great mind was once guided by a great teacher like you. Thank you for lighting the way.',
+  'Teaching is the art of lighting a fire, not filling a vessel. Thank you for setting our minds ablaze.',
+  'May your day sparkle as bright as the fireworks you inspire in us every day.',
+  'Your wisdom is our compass, your kindness our shelter. We carry your lessons wherever we go.',
+  'Thank you for your endless patience, your late nights, and your unwavering faith in every student.'
+];
+const noteEl = document.getElementById('note');
+let lastNote = 0;
+setInterval(()=>{
+  let i; do{ i=Math.random()*notes.length|0; }while(i===lastNote);
+  lastNote = i;
+  noteEl.classList.add('fade');
+  setTimeout(()=>{ noteEl.textContent = notes[i]; noteEl.classList.remove('fade'); }, 600);
+  autoShow(); // burst with each new note
+}, 30000);
+</script>
+</body>
+</html>
